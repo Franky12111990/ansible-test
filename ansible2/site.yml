@@ -1,0 +1,36 @@
+---
+- name: Install Vector on Ubuntu
+  hosts: all
+  become: yes
+  tasks:
+    - name: Add the Vector repository
+      ansible.builtin.shell: |
+        curl -fsSL https://setup.vector.dev | bash
+      register: repo_result
+      ignore_errors: yes
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Install Vector package using apt-get
+      ansible.builtin.shell: |
+        apt-get update
+        apt-get install -y vector
+      when: repo_result is succeeded and ansible_facts['os_family'] == "Debian"
+
+    - name: Ensure Vector is started and enabled
+      ansible.builtin.systemd:
+        name: vector
+        state: started
+        enabled: yes
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Check Vector status
+      ansible.builtin.shell: systemctl status vector
+      register: vector_status
+      ignore_errors: yes
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Show Vector status
+      ansible.builtin.debug:
+        msg: "{{ vector_status.stdout }}"
+      when: ansible_facts['os_family'] == "Debian"
+
