@@ -1,0 +1,33 @@
+- name: Install Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: Start and enable Nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Copy LightHouse static files
+      ansible.builtin.copy:
+        src: "files/lighthouse"
+        dest: "/usr/share/nginx/html/lighthouse"
+        mode: '0755'
+
+    - name: Configure Nginx for LightHouse
+      ansible.builtin.template:
+        src: "templates/nginx_lighthouse.conf.j2"
+        dest: "/etc/nginx/sites-available/lighthouse"
+
+    - name: Enable Nginx configuration
+      ansible.builtin.shell: |
+        ln -s /etc/nginx/sites-available/lighthouse /etc/nginx/sites-enabled/lighthouse
+        rm -f /etc/nginx/sites-enabled/default
+      args:
+        executable: /bin/bash
+
+    - name: Reload Nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
